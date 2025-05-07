@@ -1,6 +1,8 @@
+use ash::ext::debug_utils;
 use ash::prelude::VkResult;
 use ash::{Entry, Instance, vk};
 use std::os::raw::c_char;
+use winit::raw_window_handle::HasDisplayHandle;
 
 use ash_window;
 use winit::{
@@ -15,14 +17,14 @@ struct Pipeline {} //vulkan pipeline resources
 
 struct Render {} //render resources
 
-struct App {
+pub struct App {
     pub entry: Entry,
     pub instance: Instance,
-    pub window: Window;
+    pub window: Window,
 } //basic init vulkan resources
 
 impl App {
-    pub fn new() -> VkResult<Self> {
+    pub fn new(width: u32, height: u32) -> VkResult<Self> {
         let entry = Entry::linked();
         let app_name = c"vulkan_2d_triangle";
 
@@ -39,17 +41,40 @@ impl App {
             .map(|raw_name| raw_name.as_ptr())
             .collect();
 
-        // let create_info = vk::InstanceCreateInfo::default()
-        //     .application_info(&app_info)
-        //     .flags(vk::InstanceCreateFlags::empty())
-        //     .enabled_layer_names(&layers_names)
-        //     .enabled_extension_names();
+        let event_loop = EventLoop::new().unwrap();
 
-        Ok(Self { entry })
+        let window = WindowBuilder::new()
+            .with_title("vulkan_2d_triangle")
+            .with_inner_size(winit::dpi::LogicalSize::new(
+                f64::from(width),
+                f64::from(height),
+            ))
+            .build(&event_loop)
+            .unwrap();
+
+        let mut extension_names =
+            ash_window::enumerate_required_extensions(window.display_handle().unwrap().as_raw())
+                .unwrap()
+                .to_vec();
+        extension_names.push(debug_utils::NAME.as_ptr());
+
+        let create_info = vk::InstanceCreateInfo::default()
+            .application_info(&app_info)
+            .flags(vk::InstanceCreateFlags::empty())
+            .enabled_layer_names(&layers_names)
+            .enabled_extension_names(&extension_names);
+
+        let instance: Instance =
+            unsafe { entry.create_instance(&create_info, None) }.expect("Instance Create Error");
+
+        Ok(Self {
+            entry,
+            instance,
+            window,
+        })
     }
 }
 
 fn main() {
-    let app = App::new();
-
+    let app = App::new(800, 600);
 }
