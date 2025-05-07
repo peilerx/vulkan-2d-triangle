@@ -1,3 +1,5 @@
+use std::ptr::null;
+
 use ash::{Entry, Instance, vk};
 
 use ash_window;
@@ -13,8 +15,16 @@ struct Pipeline {} //vulkan pipeline resources
 
 struct Render {} //render resources
 
-struct App {} //basic init vulkan resources
+#[derive(Default)]
+struct App {
+    pub entry: Entry,
+} //basic init vulkan resources
+
+impl App {}
 
 fn main() {
+    let mut app = App::default();
+    app.entry = Entry::linked();
+
     println!("Hello, ash!");
 }
