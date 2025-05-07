@@ -28,7 +28,6 @@ impl App {
 }
 
 fn main() {
-    let _app = App::new();
-    _app.entry.static_fn();
+    let app = App::new();
     println!("Hello, ash!");
 }
