@@ -15,16 +15,20 @@ struct Pipeline {} //vulkan pipeline resources
 
 struct Render {} //render resources
 
-#[derive(Default)]
 struct App {
     pub entry: Entry,
 } //basic init vulkan resources
 
-impl App {}
+impl App {
+    pub fn new() -> Self {
+        Self {
+            entry: Entry::linked(),
+        }
+    }
+}
 
 fn main() {
-    let mut app = App::default();
-    app.entry = Entry::linked();
-
+    let _app = App::new();
+    _app.entry.static_fn();
     println!("Hello, ash!");
 }
