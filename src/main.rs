@@ -2,7 +2,7 @@ use ash::ext::debug_utils;
 use ash::prelude::VkResult;
 use ash::{Entry, Instance, vk};
 use std::os::raw::c_char;
-use winit::raw_window_handle::HasDisplayHandle;
+use winit::raw_window_handle::{HasDisplayHandle, HasWindowHandle};
 
 use ash_window;
 use winit::{
@@ -21,6 +21,7 @@ pub struct App {
     pub entry: Entry,
     pub instance: Instance,
     pub window: Window,
+    pub surface: vk::SurfaceKHR,
 } //basic init vulkan resources
 
 impl App {
@@ -67,10 +68,22 @@ impl App {
         let instance: Instance =
             unsafe { entry.create_instance(&create_info, None) }.expect("Instance Create Error");
 
+        let surface = unsafe {
+            ash_window::create_surface(
+                &entry,
+                &instance,
+                window.display_handle().unwrap().as_raw(),
+                window.window_handle().unwrap().as_raw(),
+                None,
+            )
+        }
+        .unwrap();
+
         Ok(Self {
             entry,
             instance,
             window,
+            surface,
         })
     }
 }
