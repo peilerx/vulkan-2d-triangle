@@ -1,5 +1,6 @@
 use ash::ext::debug_utils;
 use ash::prelude::VkResult;
+use ash::vk::{HostImageCopyDevicePerformanceQueryEXT, PFN_vkGetDeviceGroupPresentCapabilitiesKHR};
 use ash::{Entry, Instance, vk};
 use std::os::raw::c_char;
 use winit::raw_window_handle::{HasDisplayHandle, HasWindowHandle};
@@ -22,6 +23,9 @@ pub struct App {
     pub instance: Instance,
     pub window: Window,
     pub surface: vk::SurfaceKHR,
+    // pub physical_device: vk::PhysicalDevice,
+    // pub queue_family_index: u32,
+    // pub surface_loader: ash::khr::surface::Instance,
 } //basic init vulkan resources
 
 impl App {
@@ -79,6 +83,8 @@ impl App {
         }
         .unwrap();
 
+        let surface_loader = ash::khr::surface::Instance::new(&entry, &instance);
+
         Ok(Self {
             entry,
             instance,
@@ -89,5 +95,5 @@ impl App {
 }
 
 fn main() {
-    let app = App::new(800, 600);
+    // let app = App::new(800, 600);
 }
