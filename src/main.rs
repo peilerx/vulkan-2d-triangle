@@ -1,11 +1,10 @@
 use ash::ext::debug_utils;
+use ash::khr::surface;
 use ash::prelude::VkResult;
-use ash::vk::{HostImageCopyDevicePerformanceQueryEXT, PFN_vkGetDeviceGroupPresentCapabilitiesKHR};
 use ash::{Entry, Instance, vk};
+use ash_window;
 use std::os::raw::c_char;
 use winit::raw_window_handle::{HasDisplayHandle, HasWindowHandle};
-
-use ash_window;
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -23,9 +22,9 @@ pub struct App {
     pub instance: Instance,
     pub window: Window,
     pub surface: vk::SurfaceKHR,
-    // pub physical_device: vk::PhysicalDevice,
+    pub physical_device: vk::PhysicalDevice,
     // pub queue_family_index: u32,
-    // pub surface_loader: ash::khr::surface::Instance,
+    // pub surface_loader: surface::Instance,
 } //basic init vulkan resources
 
 impl App {
@@ -83,17 +82,53 @@ impl App {
         }
         .unwrap();
 
-        let surface_loader = ash::khr::surface::Instance::new(&entry, &instance);
+        let surface_loader = surface::Instance::new(&entry, &instance);
 
+        let physical_devices = unsafe { instance.enumerate_physical_devices().unwrap() };
+
+        let (physical_device, queue_family_index) = physical_devices
+            .into_iter()
+            .find_map(|pdevice| unsafe {
+                {
+                    instance
+                        .get_physical_device_queue_family_properties(pdevice)
+                        .iter()
+                        .enumerate()
+                        .find_map(|(index, info)| {
+                            let supports_graphics =
+                                info.queue_flags.contains(vk::QueueFlags::GRAPHICS);
+                            let supports_surface = surface_loader
+                                .get_physical_device_surface_support(pdevice, index as u32, surface)
+                                .unwrap_or(false);
+                            if supports_graphics && supports_surface {
+                                Some((pdevice, index as u32))
+                            } else {
+                                None
+                            }
+                        })
+                }
+            })
+            .expect("No physical device found");
         Ok(Self {
             entry,
             instance,
             window,
             surface,
+            physical_device,
         })
     }
 }
 
 fn main() {
-    // let app = App::new(800, 600);
+    let app = App::new(800, 600).unwrap();
+    let device_properties = unsafe {
+        app.instance
+            .get_physical_device_properties(app.physical_device)
+    };
+    let device_name = unsafe {
+        std::ffi::CStr::from_ptr(device_properties.device_name.as_ptr())
+            .to_string_lossy()
+            .into_owned()
+    };
+    println!("Device name: {:?} ", device_name);
 }
