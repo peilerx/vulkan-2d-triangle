@@ -1,9 +1,11 @@
+use ash::Device;
 use ash::ext::debug_utils;
 use ash::khr::surface;
 use ash::prelude::VkResult;
 use ash::{Entry, Instance, vk};
 use ash_window;
-use std::os::raw::c_char;
+use std::ffi::c_char;
+use vk::Queue;
 use winit::raw_window_handle::{HasDisplayHandle, HasWindowHandle};
 use winit::{
     event::{Event, WindowEvent},
@@ -25,6 +27,8 @@ pub struct App {
     pub surface_loader: surface::Instance,
     pub physical_device: vk::PhysicalDevice,
     pub queue_family_index: u32,
+    pub device: Device,
+    pub present_queue: Queue,
 } //basic init vulkan resources
 
 impl App {
@@ -109,6 +113,26 @@ impl App {
                 }
             })
             .expect("No physical device found");
+
+        let device_extension_names_raw: Vec<*const c_char> = vec![];
+        let priorities = [1.0_f32];
+
+        let queue_info = vk::DeviceQueueCreateInfo::default()
+            .queue_family_index(queue_family_index)
+            .queue_priorities(&priorities);
+        let queue_infos = [queue_info];
+        let device_create_info = vk::DeviceCreateInfo::default()
+            .queue_create_infos(&queue_infos)
+            .enabled_extension_names(&device_extension_names_raw);
+
+        let device = unsafe {
+            instance
+                .create_device(physical_device, &device_create_info, None)
+                .unwrap()
+        };
+
+        let present_queue = unsafe { device.get_device_queue(queue_family_index, 0) };
+
         Ok(Self {
             entry,
             instance,
@@ -117,6 +141,8 @@ impl App {
             surface_loader,
             physical_device,
             queue_family_index,
+            device,
+            present_queue,
         })
     }
 }
