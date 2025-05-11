@@ -22,9 +22,9 @@ pub struct App {
     pub instance: Instance,
     pub window: Window,
     pub surface: vk::SurfaceKHR,
+    pub surface_loader: surface::Instance,
     pub physical_device: vk::PhysicalDevice,
-    // pub queue_family_index: u32,
-    // pub surface_loader: surface::Instance,
+    pub queue_family_index: u32,
 } //basic init vulkan resources
 
 impl App {
@@ -114,7 +114,9 @@ impl App {
             instance,
             window,
             surface,
+            surface_loader,
             physical_device,
+            queue_family_index,
         })
     }
 }
@@ -125,10 +127,6 @@ fn main() {
         app.instance
             .get_physical_device_properties(app.physical_device)
     };
-    let device_name = unsafe {
-        std::ffi::CStr::from_ptr(device_properties.device_name.as_ptr())
-            .to_string_lossy()
-            .into_owned()
-    };
-    println!("Device name: {:?} ", device_name);
+    let device_name = unsafe { std::ffi::CStr::from_ptr(device_properties.device_name.as_ptr()) };
+    println!("Device name 1: {:?} ", device_name);
 }
