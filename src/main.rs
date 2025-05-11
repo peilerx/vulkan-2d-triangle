@@ -13,7 +13,10 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
-struct Swapchain {} //vulkan swapchain resources 
+struct Swapchain {
+    pub loader: ash::khr::swapchain::Device,
+    pub swapchain: vk::SwapchainKHR,
+} //vulkan swapchain resources 
 
 struct Pipeline {} //vulkan pipeline resources
 
@@ -22,6 +25,7 @@ struct Render {} //render resources
 pub struct App {
     pub entry: Entry,
     pub instance: Instance,
+    pub event_loop: EventLoop<()>,
     pub window: Window,
     pub surface: vk::SurfaceKHR,
     pub surface_loader: surface::Instance,
@@ -33,7 +37,7 @@ pub struct App {
 
 impl App {
     pub fn new(width: u32, height: u32) -> VkResult<Self> {
-        let entry = Entry::linked(); //тип вход в Vulkan
+        let entry = Entry::linked(); //базовый ресурс Vulkan
         let app_name = c"vulkan_2d_triangle";
 
         let app_info = vk::ApplicationInfo::default()
@@ -135,11 +139,13 @@ impl App {
                 .unwrap()
         };
 
-        let present_queue = unsafe { device.get_device_queue(queue_family_index, 0) }; //возвращаем очередь логического устройства
+        let present_queue = unsafe { device.get_device_queue(queue_family_index, 0) }; //возвращаем очередь логического устройства,
+        // очереди принимают SubmitInfo а SubmitInfo принимает массив CommandBuffer, массив комманд на выполнение на  GPU
 
         Ok(Self {
             entry,
             instance,
+            event_loop,
             window,
             surface,
             surface_loader,
