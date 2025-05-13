@@ -141,6 +141,7 @@ impl App {
 
         let present_queue = unsafe { device.get_device_queue(queue_family_index, 0) }; //возвращаем очередь логического устройства,
         // очереди принимают SubmitInfo а SubmitInfo принимает массив CommandBuffer, массив комманд на выполнение на  GPU
+        // первый параметр это индекс семейства очередей GRAPHICS или COMPUTE, PRESENT, TRANSFER  etc, второй параметр это индекс очереди, очередей в одном семействе может быть заданое количество
 
         Ok(Self {
             entry,
