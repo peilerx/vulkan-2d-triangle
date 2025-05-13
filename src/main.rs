@@ -18,6 +18,26 @@ struct Swapchain {
     pub swapchain: vk::SwapchainKHR,
 } //vulkan swapchain resources 
 
+impl Swapchain {
+    pub fn new(
+        instance: &ash::Instance,
+        device: &ash::Device,
+        surface: vk::SurfaceKHR,
+        surface_loader: &ash::khr::surface::Instance,
+        physical_device: vk::PhysicalDevice,
+        queue_fanily_index: u32,
+        window: &Window,
+    ) -> VkResult<Self> {
+        let surface_capabilities = unsafe {
+            surface_loader.get_physical_device_surface_capabilities(physical_device, surface)
+        };
+
+        Ok(Swapchain {
+            loader: None.unwrap(),
+            swapchain: None.unwrap(),
+        })
+    }
+}
 struct Pipeline {} //vulkan pipeline resources
 
 struct Render {} //render resources
