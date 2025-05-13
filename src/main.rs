@@ -25,16 +25,25 @@ impl Swapchain {
         surface: vk::SurfaceKHR,
         surface_loader: &ash::khr::surface::Instance,
         physical_device: vk::PhysicalDevice,
-        queue_fanily_index: u32,
+        queue_family_index: u32,
         window: &Window,
     ) -> VkResult<Self> {
         let surface_capabilities = unsafe {
-            surface_loader.get_physical_device_surface_capabilities(physical_device, surface)
+            surface_loader
+                .get_physical_device_surface_capabilities(physical_device, surface)
+                .unwrap()
         };
 
+        print!(
+            "Surface capabilities: min_images = {}, max_images = {}, extend = {:?} ",
+            surface_capabilities.min_image_count,
+            surface_capabilities.max_image_count,
+            surface_capabilities.current_extent
+        );
+
         Ok(Swapchain {
-            loader: None.unwrap(),
-            swapchain: None.unwrap(),
+            loader: unimplemented!("none"),
+            swapchain: unimplemented!("none"),
         })
     }
 }
@@ -184,6 +193,18 @@ fn main() {
         app.instance
             .get_physical_device_properties(app.physical_device)
     };
+
     let device_name = unsafe { std::ffi::CStr::from_ptr(device_properties.device_name.as_ptr()) };
     println!("Device name 1: {:?} ", device_name);
+
+    let swapchain = Swapchain::new(
+        &app.instance,
+        &app.device,
+        app.surface,
+        &app.surface_loader,
+        app.physical_device,
+        app.queue_family_index,
+        &app.window,
+    )
+    .unwrap();
 }
