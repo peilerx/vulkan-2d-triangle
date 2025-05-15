@@ -25,7 +25,7 @@ impl Swapchain {
         surface: vk::SurfaceKHR,
         surface_loader: &ash::khr::surface::Instance,
         physical_device: vk::PhysicalDevice,
-        _queue_family_index: u32,
+        queue_family_index: u32,
         window: &Window,
     ) -> VkResult<Self> {
         let surface_capabilities = unsafe {
@@ -70,7 +70,7 @@ impl Swapchain {
         println!("Current extent: {:?}", surface_capabilities.current_extent);
         println!(
             "min image extent width: {}",
-            surface_capabilities.max_image_extent.height
+            surface_capabilities.min_image_extent.width
         );
 
         let extent = if surface_capabilities.current_extent.width != u32::MAX {
@@ -110,6 +110,7 @@ impl Swapchain {
         println!("Swapchain image count: {}", image_count);
 
         let swapchain_loader = ash::khr::swapchain::Device::new(instance, device);
+        let queue_family_indices = &[queue_family_index];
 
         let create_info = vk::SwapchainCreateInfoKHR::default()
             .surface(surface)
@@ -120,6 +121,8 @@ impl Swapchain {
             .image_array_layers(1)
             .image_usage(vk::ImageUsageFlags::COLOR_ATTACHMENT) //изображения используются для цветного отображения
             .pre_transform(surface_capabilities.current_transform) //преобразование изображений, по дефолту без поворотов
+            .image_sharing_mode(vk::SharingMode::EXCLUSIVE) //эксклюзивный доступ к семейству очередей, экслюзивный значит для одного семейства
+            .queue_family_indices(queue_family_indices) //передаем массив индексов семейства очередей, массив для задела в случае если мы будет передавать больше семейств COMPUTE, GRAPHICS ETC
             .composite_alpha(vk::CompositeAlphaFlagsKHR::OPAQUE) //непрозрачный режим для окна
             .present_mode(vk::PresentModeKHR::MAILBOX)
             .clipped(true); //обрезка невидимых пикселей 
