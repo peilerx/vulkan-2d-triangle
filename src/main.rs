@@ -72,6 +72,7 @@ impl Swapchain {
 
         let extent = if surface_capabilities.current_extent.width != u32::MAX {
             //проверка на неопределенное состояние размеров окна,
+            //по спецификации Vulkan неопределенное состояние поверхности или окна всегда будет u32::MAX
             //если состояние определенное верни реальные размеры окна в переменную extent
             surface_capabilities.current_extent
         } else {
