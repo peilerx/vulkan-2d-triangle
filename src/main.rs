@@ -25,7 +25,7 @@ impl Swapchain {
         surface: vk::SurfaceKHR,
         surface_loader: &ash::khr::surface::Instance,
         physical_device: vk::PhysicalDevice,
-        queue_family_index: u32,
+        _queue_family_index: u32,
         window: &Window,
     ) -> VkResult<Self> {
         let surface_capabilities = unsafe {
@@ -41,8 +41,11 @@ impl Swapchain {
             surface_capabilities.current_extent //размер поверхности рендера, привязанного к размеру окна
         );
 
-        let surface_formats =
-            unsafe { surface_loader.get_physical_device_surface_formats(physical_device, surface) }; //форматы отображения изо в различный RGB форматах,
+        let surface_formats = unsafe {
+            surface_loader
+                .get_physical_device_surface_formats(physical_device, surface)
+                .unwrap()
+        }; //форматы отображения изо в различный RGB форматах,
         //с разной цветокоррекцией, гаммой, прозрачностью, размером канала на один цвет или альфа канал
 
         println!("Available surface formats: {:?}", surface_formats);
@@ -93,7 +96,44 @@ impl Swapchain {
             }
         };
 
-        Err(vk::Result::ERROR_INITIALIZATION_FAILED)
+        let image_count = if surface_capabilities.max_image_count > 0 {
+            //защита от дурака, если указал максимум меньше минимума,
+            // на разные GPU дефолтные значения могут меняться,
+            //max_image_count = 0 это значит что ограничений по максимум нет, если бы указали 1 или больше, то все должно совпадать, и берем всегда минимум
+            surface_capabilities
+                .min_image_count
+                .min(surface_capabilities.max_image_count)
+        } else {
+            surface_capabilities.min_image_count + 1 //даем запас по буфферу + 1, для MAILBOX например
+        };
+
+        println!("Swapchain image count: {}", image_count);
+
+        let swapchain_loader = ash::khr::swapchain::Device::new(instance, device);
+
+        let create_info = vk::SwapchainCreateInfoKHR::default()
+            .surface(surface)
+            .min_image_count(image_count)
+            .image_format(surface_formats[0].format)
+            .image_color_space(surface_formats[0].color_space)
+            .image_extent(extent)
+            .image_array_layers(1)
+            .image_usage(vk::ImageUsageFlags::COLOR_ATTACHMENT) //изображения используются для цветного отображения
+            .pre_transform(surface_capabilities.current_transform) //преобразование изображений, по дефолту без поворотов
+            .composite_alpha(vk::CompositeAlphaFlagsKHR::OPAQUE) //непрозрачный режим для окна
+            .present_mode(vk::PresentModeKHR::MAILBOX)
+            .clipped(true); //обрезка невидимых пикселей 
+
+        let swapchain = unsafe {
+            swapchain_loader
+                .create_swapchain(&create_info, None)
+                .unwrap()
+        };
+
+        Ok(Self {
+            loader: swapchain_loader,
+            swapchain,
+        })
     }
 }
 struct Pipeline {} //vulkan pipeline resources
