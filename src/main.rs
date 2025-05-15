@@ -16,6 +16,7 @@ use winit::{
 struct Swapchain {
     pub loader: ash::khr::swapchain::Device,
     pub swapchain: vk::SwapchainKHR,
+    pub image_views: Vec<vk::ImageView>,
 } //vulkan swapchain resources 
 
 impl Swapchain {
@@ -133,16 +134,41 @@ impl Swapchain {
                 .unwrap()
         };
 
-        let images = unsafe { swapchain_loader.get_swapchain_images(swapchain) };
+        let images = unsafe { swapchain_loader.get_swapchain_images(swapchain).unwrap() };
 
         println!(
             "Count of swapchain images: {:?}",
-            images.unwrap().iter().count() //такое же количество как и в image_count четыре буффера.
+            images.iter().count() //такое же количество как и в image_count четыре буффера.
         );
+
+        let image_views: Vec<vk::ImageView> = images
+            .iter()
+            .map(|&image| {
+                let create_info = vk::ImageViewCreateInfo::default()
+                    .view_type(vk::ImageViewType::TYPE_2D)
+                    .format(surface_formats[0].format)
+                    .components(vk::ComponentMapping {
+                        r: vk::ComponentSwizzle::IDENTITY,
+                        g: vk::ComponentSwizzle::IDENTITY,
+                        b: vk::ComponentSwizzle::IDENTITY,
+                        a: vk::ComponentSwizzle::IDENTITY,
+                    })
+                    .subresource_range(vk::ImageSubresourceRange {
+                        aspect_mask: vk::ImageAspectFlags::COLOR,
+                        base_mip_level: 0,
+                        level_count: 1,
+                        base_array_layer: 0,
+                        layer_count: 1,
+                    })
+                    .image(image);
+                unsafe { device.create_image_view(&create_info, None).unwrap() }
+            })
+            .collect();
 
         Ok(Self {
             loader: swapchain_loader,
             swapchain,
+            image_views,
         })
     }
 }
