@@ -130,6 +130,13 @@ impl Swapchain {
                 .unwrap()
         };
 
+        let images = unsafe { swapchain_loader.get_swapchain_images(swapchain) };
+
+        println!(
+            "Count of swapchain images: {:?}",
+            images.unwrap().iter().count() //такое же количество как и в image_count четыре буффера.
+        );
+
         Ok(Self {
             loader: swapchain_loader,
             swapchain,
