@@ -36,13 +36,14 @@ impl Swapchain {
 
         print!(
             "Surface capabilities: min_images = {}, max_images = {}, extent = {:?} ",
-            surface_capabilities.min_image_count,
-            surface_capabilities.max_image_count,
-            surface_capabilities.current_extent
+            surface_capabilities.min_image_count, //минимальное количество кадров в очереди для данного GPU
+            surface_capabilities.max_image_count,//максимальное количество указано 0 то есть без ограничений на данный GPU
+            surface_capabilities.current_extent //размер поверхности рендера, привязанного к размеру окна
         );
 
         let surface_formats =
-            unsafe { surface_loader.get_physical_device_surface_formats(physical_device, surface) };
+            unsafe { surface_loader.get_physical_device_surface_formats(physical_device, surface) }; //форматы отображения изо в различный RGB форматах,
+        //с разной цветокоррекцией, гаммой, прозрачностью, размером канала на один цвет или альфа канал
 
         println!("Avaliable surface formats: {:?}", surface_formats);
 
