@@ -37,7 +37,7 @@ impl Swapchain {
         print!(
             "Surface capabilities: min_images = {}, max_images = {}, extent = {:?} ",
             surface_capabilities.min_image_count, //минимальное количество кадров в очереди для данного GPU
-            surface_capabilities.max_image_count,//максимальное количество указано 0 то есть без ограничений на данный GPU
+            surface_capabilities.max_image_count, //максимальное количество указано 0 то есть без ограничений на данный GPU
             surface_capabilities.current_extent //размер поверхности рендера, привязанного к размеру окна
         );
 
@@ -45,23 +45,52 @@ impl Swapchain {
             unsafe { surface_loader.get_physical_device_surface_formats(physical_device, surface) }; //форматы отображения изо в различный RGB форматах,
         //с разной цветокоррекцией, гаммой, прозрачностью, размером канала на один цвет или альфа канал
 
-        println!("Avaliable surface formats: {:?}", surface_formats);
+        println!("Available surface formats: {:?}", surface_formats);
 
-        let present_modes = unsafe //получаем список режимов представления изображения, IMMEDIATE, MAILBOX, FIFO, FIFO_RELAXED 
+        let present_modes = unsafe {
+            //получаем список режимов представления изображения, IMMEDIATE, MAILBOX, FIFO, FIFO_RELAXED
             surface_loader.get_physical_device_surface_present_modes(physical_device, surface)
         };
-            /*
-            1.IMMEDIATE отображает изображение сразу без ожидании синхронизации с частотой обновления экрана
-            
-            2. MAILBOX тройная буфферизация, одно изо отображается, второе рендериться,
-            третье рендерится, если второй и третий отрендерились у возмет самый свежий рендер и отобразит его, то есть пропустить второй и покажет третий
-            
-            3. FIFO двойная или тройная буфферизация с ожиданием обноевления частосты экрана v-sync (вертикальная синхронизация),
-            создается очередь на отображение привязанная к частоте обновления экрана, второй и третий кадр даже если они прошли этап рендера в любом случае
-            отобразяться в строгой последовательности второй потом третий
-            */
+        /*
+        1.IMMEDIATE отображает изображение сразу без ожидания синхронизации с частотой обновления экрана
+
+        2. MAILBOX тройная буфферизация, одно изо отображается, второе рендериться,
+        третье рендерится, если второй и третий отрендерились у возмет самый свежий рендер и отобразит его, то есть пропустить второй и покажет третий
+
+        3. FIFO двойная или тройная буфферизация с ожиданием обноевления частосты экрана v-sync (вертикальная синхронизация),
+        создается очередь на отображение привязанная к частоте обновления экрана, второй и третий кадр даже если они прошли этап рендера в любом случае
+        отобразяться в строгой последовательности второй потом третий
+        */
 
         println!("Present modes: {:?}", present_modes);
+
+        println!("Current extent: {:?}", surface_capabilities.current_extent);
+        println!(
+            "min image extent width: {}",
+            surface_capabilities.max_image_extent.height
+        );
+
+        let extent = if surface_capabilities.current_extent.width != u32::MAX {
+            //проверка на неопределенное состояние размеров окна,
+            //если состояние определенное верни реальные размеры окна в переменную extent
+            surface_capabilities.current_extent
+        } else {
+            //в противном случае если размер u32::MAX состояние не определенно создай новую поверхность
+            let size = window.inner_size(); //достает данные для размеров поверхности surface из window
+            vk::Extent2D {
+                //создаем и возврашаем новый экземляр поверхности
+                width: size.width.clamp(
+                    //если меньше диапазона верни минимум или если больше верни максимум, если в диапазоне верни значение по факту
+                    surface_capabilities.min_image_extent.width,
+                    surface_capabilities.max_image_extent.width,
+                ),
+                height: size.height.clamp(
+                    //тоже самое для высоты
+                    surface_capabilities.min_image_extent.height,
+                    surface_capabilities.max_image_extent.height,
+                ),
+            }
+        };
 
         Err(vk::Result::ERROR_INITIALIZATION_FAILED)
     }
