@@ -35,16 +35,13 @@ impl Swapchain {
         };
 
         print!(
-            "Surface capabilities: min_images = {}, max_images = {}, extend = {:?} ",
+            "Surface capabilities: min_images = {}, max_images = {}, extent = {:?} ",
             surface_capabilities.min_image_count,
             surface_capabilities.max_image_count,
             surface_capabilities.current_extent
         );
 
-        Ok(Swapchain {
-            loader: unimplemented!("none"),
-            swapchain: unimplemented!("none"),
-        })
+        Err(vk::Result::ERROR_INITIALIZATION_FAILED)
     }
 }
 struct Pipeline {} //vulkan pipeline resources
@@ -150,7 +147,9 @@ impl App {
             })
             .expect("No physical device found");
 
-        let device_extension_names_raw: Vec<*const c_char> = vec![]; //расширения устройства
+        let device_extension_names_raw: Vec<*const c_char> =
+            vec![ash::khr::swapchain::NAME.as_ptr()]; //расширения устройства
+
         let priorities = [1.0_f32]; //приоритет очереди, первый
 
         let queue_info = vk::DeviceQueueCreateInfo::default() //информация для создания очереди устройства
