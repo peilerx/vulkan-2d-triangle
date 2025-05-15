@@ -41,6 +41,27 @@ impl Swapchain {
             surface_capabilities.current_extent
         );
 
+        let surface_formats =
+            unsafe { surface_loader.get_physical_device_surface_formats(physical_device, surface) };
+
+        println!("Avaliable surface formats: {:?}", surface_formats);
+
+        let present_modes = unsafe //получаем список режимов представления изображения, IMMEDIATE, MAILBOX, FIFO, FIFO_RELAXED 
+            surface_loader.get_physical_device_surface_present_modes(physical_device, surface)
+        };
+            /*
+            1.IMMEDIATE отображает изображение сразу без ожидании синхронизации с частотой обновления экрана
+            
+            2. MAILBOX тройная буфферизация, одно изо отображается, второе рендериться,
+            третье рендерится, если второй и третий отрендерились у возмет самый свежий рендер и отобразит его, то есть пропустить второй и покажет третий
+            
+            3. FIFO двойная или тройная буфферизация с ожиданием обноевления частосты экрана v-sync (вертикальная синхронизация),
+            создается очередь на отображение привязанная к частоте обновления экрана, второй и третий кадр даже если они прошли этап рендера в любом случае
+            отобразяться в строгой последовательности второй потом третий
+            */
+
+        println!("Present modes: {:?}", present_modes);
+
         Err(vk::Result::ERROR_INITIALIZATION_FAILED)
     }
 }
