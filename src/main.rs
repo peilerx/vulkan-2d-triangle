@@ -13,13 +13,13 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
-struct SynchronizationBase {
+struct FramesBase {
     pub loader: ash::khr::swapchain::Device,
     pub swapchain: vk::SwapchainKHR,
     pub image_views: Vec<vk::ImageView>,
 } //vulkan swapchain resources 
 
-impl SynchronizationBase {
+impl FramesBase {
     pub fn new(
         instance: &ash::Instance,
         device: &ash::Device,
@@ -325,7 +325,7 @@ fn main() {
     let device_name = unsafe { std::ffi::CStr::from_ptr(device_properties.device_name.as_ptr()) };
     println!("Device name 1: {:?} ", device_name);
 
-    let synchro_base = SynchronizationBase::new(
+    let frames_base = FramesBase::new(
         &app_base.instance,
         &app_base.device,
         app_base.surface,
