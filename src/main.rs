@@ -13,13 +13,13 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
-struct Swapchain {
+struct SwapchainBase {
     pub loader: ash::khr::swapchain::Device,
     pub swapchain: vk::SwapchainKHR,
     pub image_views: Vec<vk::ImageView>,
 } //vulkan swapchain resources 
 
-impl Swapchain {
+impl SwapchainBase {
     pub fn new(
         instance: &ash::Instance,
         device: &ash::Device,
@@ -172,11 +172,11 @@ impl Swapchain {
         })
     }
 }
-struct Pipeline {} //vulkan pipeline resources
+struct PipelineBase {} //vulkan pipeline resources
 
-struct Render {} //render resources
+struct RenderBase {} //render resources
 
-pub struct App {
+pub struct AppBase {
     pub entry: Entry,
     pub instance: Instance,
     pub event_loop: EventLoop<()>,
@@ -189,7 +189,7 @@ pub struct App {
     pub present_queue: Queue,
 } //basic init vulkan resources
 
-impl App {
+impl AppBase {
     pub fn new(width: u32, height: u32) -> VkResult<Self> {
         let entry = Entry::linked(); //базовый ресурс Vulkan
         let app_name = c"vulkan_2d_triangle";
@@ -315,23 +315,24 @@ impl App {
 }
 
 fn main() {
-    let app = App::new(800, 600).unwrap();
+    let app_base = AppBase::new(800, 600).unwrap();
     let device_properties = unsafe {
-        app.instance
-            .get_physical_device_properties(app.physical_device)
+        app_base
+            .instance
+            .get_physical_device_properties(app_base.physical_device)
     };
 
     let device_name = unsafe { std::ffi::CStr::from_ptr(device_properties.device_name.as_ptr()) };
     println!("Device name 1: {:?} ", device_name);
 
-    let swapchain = Swapchain::new(
-        &app.instance,
-        &app.device,
-        app.surface,
-        &app.surface_loader,
-        app.physical_device,
-        app.queue_family_index,
-        &app.window,
+    let swapchain_base = SwapchainBase::new(
+        &app_base.instance,
+        &app_base.device,
+        app_base.surface,
+        &app_base.surface_loader,
+        app_base.physical_device,
+        app_base.queue_family_index,
+        &app_base.window,
     )
     .unwrap();
 }
