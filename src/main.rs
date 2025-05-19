@@ -15,7 +15,7 @@ use winit::{
 
 struct FramesBase {
     pub loader: ash::khr::swapchain::Device,
-    pub swapchain: vk::SwapchainKHR,
+    pub swapchain: vk::SwapchainKHR, /*swapchain это структура которая используется технология организации/буфферизации отображения кадров и способ общения с оконным менеджером вашей системы */
     pub image_views: Vec<vk::ImageView>,
 } //vulkan swapchain resources 
 
@@ -134,14 +134,14 @@ impl FramesBase {
                 .unwrap()
         };
 
-        let images = unsafe { swapchain_loader.get_swapchain_images(swapchain).unwrap() };
+        let images = unsafe { swapchain_loader.get_swapchain_images(swapchain).unwrap() }; //получаем сами кадры, вектор из 4 кадров
 
         println!(
             "Count of swapchain images: {:?}",
-            images.iter().count() //такое же количество как и в image_count четыре буффера.
+            images.iter().count() //такое же количество как и в image_count четыре кадра.
         );
 
-        let image_views: Vec<vk::ImageView> = images
+        let image_views: Vec<vk::ImageView> = images //ImageView это инструкция как работать с памятью кадра
             .iter()
             .map(|&image| {
                 let create_info = vk::ImageViewCreateInfo::default()
