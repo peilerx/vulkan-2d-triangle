@@ -165,6 +165,11 @@ impl FramesBase {
                         layer_count: 1,
                     })
                     .image(image);
+                let swizzle = vk::ComponentSwizzle::IDENTITY;
+                println!(
+                    "Rgb component swizzle IDENTITY test = {:?}",
+                    swizzle.as_raw() as i32
+                );
                 unsafe { device.create_image_view(&create_info, None).unwrap() }
             })
             .collect();
@@ -179,6 +184,12 @@ impl FramesBase {
         })
     }
 }
+
+struct RenderBase {
+    pub render_pass: vk::RenderPass,
+    pub frame_buffers: Vec<vk::Framebuffer>,
+}
+
 struct AppearanceBase {} //vulkan pipeline resources
 
 struct DisplayBase {} //render resources
