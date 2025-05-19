@@ -15,7 +15,10 @@ use winit::{
 
 struct FramesBase {
     pub loader: ash::khr::swapchain::Device,
+    pub surface_format: vk::SurfaceFormatKHR,
+    pub extent: vk::Extent2D,
     pub swapchain: vk::SwapchainKHR, /*swapchain это структура которая используется технология организации/буфферизации отображения кадров и способ общения с оконным менеджером вашей системы */
+    pub images: Vec<vk::Image>,
     pub image_views: Vec<vk::ImageView>,
 } //vulkan swapchain resources 
 
@@ -48,6 +51,7 @@ impl FramesBase {
                 .unwrap()
         }; //форматы отображения изо в различный RGB форматах,
         //с разной цветокоррекцией, гаммой, прозрачностью, размером канала на один цвет или альфа канал
+        let surface_format = surface_formats[0];
 
         println!("Available surface formats: {:?}", surface_formats);
 
@@ -167,7 +171,10 @@ impl FramesBase {
 
         Ok(Self {
             loader: swapchain_loader,
+            surface_format,
+            extent,
             swapchain,
+            images,
             image_views,
         })
     }
