@@ -188,6 +188,9 @@ impl FramesBase {
     }
 }
 
+/*RenderBase нужен для определения порядка отображения теней, сглаживания, геометрии, освещения и так далее,
+в нем можно определить порядок рендера применяемый к одному или нескольким кадрам ImageView, с помощью механизма subpass`ов
+renderpassы это про организацию рендера, а не про сам рендер*/
 struct RenderBase {
     pub render_pass: vk::RenderPass,
     pub frame_buffers: Vec<vk::Framebuffer>,
@@ -201,24 +204,29 @@ impl RenderBase {
         extent: vk::Extent2D,
     ) -> VkResult<Self> {
         let render_pass = {
-            let color_attachment = vk::AttachmentDescription::default()
+            let color_attachment = vk::AttachmentDescription::default() //описание свойства буффера которые будут применять к ImageView
                 .format(format)
-                .samples(vk::SampleCountFlags::TYPE_1)
-                .load_op(vk::AttachmentLoadOp::CLEAR)
-                .store_op(vk::AttachmentStoreOp::STORE)
-                .stencil_load_op(vk::AttachmentLoadOp::DONT_CARE)
-                .stencil_store_op(vk::AttachmentStoreOp::DONT_CARE)
-                .initial_layout(vk::ImageLayout::UNDEFINED)
-                .final_layout(vk::ImageLayout::PRESENT_SRC_KHR);
+                .samples(vk::SampleCountFlags::TYPE_1) /*флаг сглаживания TYPE_1 (x1) без сглаживания, TYPE_2 это MSAA x2 и так далее */
+                .load_op(vk::AttachmentLoadOp::CLEAR) /*определяет что будет с буффером кадра перед рендером, флаг очистить определенным цветом*/
+                .store_op(vk::AttachmentStoreOp::STORE) /*определяет состояние буффера после рендера STORE флаг сохранение результатов рендера после рендера*/
+                .stencil_load_op(vk::AttachmentLoadOp::DONT_CARE) /*указание для трафаретного буффера перед рендером, игнорировать, нужен для 3D*/
+                .stencil_store_op(vk::AttachmentStoreOp::DONT_CARE) /*указания для трафаретного буффера после рендера, в данном случае тоже игнорировать*/
+                .initial_layout(vk::ImageLayout::UNDEFINED) /*начальное состояние буффера перед рендером, UNDEFINED начальное состояние не важно*/ 
+                .final_layout(vk::ImageLayout::PRESENT_SRC_KHR); /*конечное состояние буффера после рендера, PRESENT_SRC_KHR - отобразить*/
 
-            let color_attachment_ref = vk::AttachmentReference::default()
-                .attachment(0)
-                .layout(vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL);
+            let color_attachment_ref = vk::AttachmentReference::default() //указывает как субпасс будет использоваться в renderpass
+                .attachment(0) /*возьми первое вложение из массива с индексом 0*/
+                .layout(vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL) /*буффер оптимизирован для работы со цветом,
+            в целом весь этот референс говорит нам что надо взять нулевое вложение и использовать его для работы с цветом*/;
 
             let color_attachment_refs = &[color_attachment_ref];
 
-            let subpass = vk::SubpassDescription::default()
-                .pipeline_bind_point(vk::PipelineBindPoint::GRAPHICS)
+            let subpass = vk::SubpassDescription::default() //этап рендера,
+                // можно добавлять их больше, каждый субпасс может отвечать за разное,
+                //  будь то цвет или глубина, трафарет и так далее
+                .pipeline_bind_point(vk::PipelineBindPoint::GRAPHICS) /*subpass использует графический pipeline
+                если выбрано другое семейство очереди рендер не будет работать, например если семейство очереди помечено как COMPUTE для вычислений,
+                то графический флаг пайплайна не будет работать */
                 .color_attachments(color_attachment_refs);
 
             let color_attachments = &[color_attachment];
@@ -232,7 +240,8 @@ impl RenderBase {
         }
         .unwrap();
 
-        let frame_buffers = unsafe {
+        let frame_buffers = unsafe { //framebuffers это механизм привязки того как и
+            // в каком порядке будет рендерится кадр ImageView с помощью RenderPass
             image_views.iter().map(|&image_view| {
                 let attachments = [image_view];
                 let framebuffer_info = vk::FramebufferCreateInfo::default()
