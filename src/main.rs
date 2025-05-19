@@ -2,6 +2,7 @@ use ash::Device;
 use ash::ext::debug_utils;
 use ash::khr::surface;
 use ash::prelude::VkResult;
+use ash::vk::Result;
 use ash::{Entry, Instance, vk};
 use ash_window;
 use std::ffi::c_char;
@@ -20,6 +21,7 @@ struct FramesBase {
     pub swapchain: vk::SwapchainKHR, /*swapchain это структура которая используется технология организации/буфферизации отображения кадров и способ общения с оконным менеджером вашей системы */
     pub images: Vec<vk::Image>,
     pub image_views: Vec<vk::ImageView>,
+    pub format: vk::Format,
 } //vulkan swapchain resources 
 
 impl FramesBase {
@@ -52,7 +54,7 @@ impl FramesBase {
         }; //форматы отображения изо в различный RGB форматах,
         //с разной цветокоррекцией, гаммой, прозрачностью, размером канала на один цвет или альфа канал
         let surface_format = surface_formats[0];
-
+        let format = surface_format.format;
         println!("Available surface formats: {:?}", surface_formats);
 
         let present_modes = unsafe {
@@ -181,6 +183,7 @@ impl FramesBase {
             swapchain,
             images,
             image_views,
+            format,
         })
     }
 }
@@ -188,6 +191,66 @@ impl FramesBase {
 struct RenderBase {
     pub render_pass: vk::RenderPass,
     pub frame_buffers: Vec<vk::Framebuffer>,
+}
+
+impl RenderBase {
+    pub fn new(
+        device: &Device,
+        format: vk::Format,
+        image_views: &[vk::ImageView],
+        extent: vk::Extent2D,
+    ) -> VkResult<Self> {
+        let render_pass = {
+            let color_attachment = vk::AttachmentDescription::default()
+                .format(format)
+                .samples(vk::SampleCountFlags::TYPE_1)
+                .load_op(vk::AttachmentLoadOp::CLEAR)
+                .store_op(vk::AttachmentStoreOp::STORE)
+                .stencil_load_op(vk::AttachmentLoadOp::DONT_CARE)
+                .stencil_store_op(vk::AttachmentStoreOp::DONT_CARE)
+                .initial_layout(vk::ImageLayout::UNDEFINED)
+                .final_layout(vk::ImageLayout::PRESENT_SRC_KHR);
+
+            let color_attachment_ref = vk::AttachmentReference::default()
+                .attachment(0)
+                .layout(vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL);
+
+            let color_attachment_refs = &[color_attachment_ref];
+
+            let subpass = vk::SubpassDescription::default()
+                .pipeline_bind_point(vk::PipelineBindPoint::GRAPHICS)
+                .color_attachments(color_attachment_refs);
+
+            let color_attachments = &[color_attachment];
+
+            let subpasses = &[subpass];
+            let render_pass_info = vk::RenderPassCreateInfo::default()
+                .attachments(color_attachments)
+                .subpasses(subpasses);
+
+            unsafe { device.create_render_pass(&render_pass_info, None) }
+        }
+        .unwrap();
+
+        let frame_buffers = unsafe {
+            image_views.iter().map(|&image_view| {
+                let attachments = [image_view];
+                let framebuffer_info = vk::FramebufferCreateInfo::default()
+                    .render_pass(render_pass)
+                    .attachments(&attachments)
+                    .width(extent.width)
+                    .height(extent.height)
+                    .layers(1);
+                device.create_framebuffer(&framebuffer_info, None).unwrap()
+            })
+        }
+        .collect();
+
+        Ok(Self {
+            render_pass,
+            frame_buffers,
+        })
+    }
 }
 
 struct AppearanceBase {} //vulkan pipeline resources
@@ -351,6 +414,14 @@ fn main() {
         app_base.physical_device,
         app_base.queue_family_index,
         &app_base.window,
+    )
+    .unwrap();
+
+    let render_base = RenderBase::new(
+        &app_base.device,
+        frames_base.format,
+        &frames_base.image_views,
+        frames_base.extent,
     )
     .unwrap();
 }
