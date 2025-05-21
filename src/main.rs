@@ -13,6 +13,7 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
     window::{Window, WindowBuilder},
 };
+use std::io::Cursor;
 
 struct FramesBase {
     pub loader: ash::khr::swapchain::Device,
@@ -262,9 +263,45 @@ impl RenderBase {
     }
 }
 
-struct AppearanceBase {} //vulkan pipeline resources
+struct AppearanceBase {
+    pub pipeline: vk::Pipeline,
+    pub pipeline_layout: vk::PipelineLayout,
+    shader_modules: Vec<vk::ShaderModule>,
+} //vulkan pipeline resources
 
-struct DisplayBase {} //render resources
+impl AppearanceBase {
+    pub fn new(device: &Device, render_pass: vk::RenderPass, extent: vk::Extent2D) -> VkResult<Self> {
+        let vert_shader_code = include_bytes!("../shader/triangle.vert.spv").to_vec();
+        let frag_shader_code = include_bytes!("../shader/triangle.frag.spv").to_vec();
+
+        if vert_shader_code.len() % 4 != 0 || frag_shader_code.len() % 4 != 0 {
+            return Err(vk::Result::ERROR_INITIALIZATION_FAILED);
+        }
+
+        let vert_shader_words: &[u32] = unsafe {
+            std::slice::from_raw_parts(vert_shader_code.as_ptr() as *const u32, vert_shader_code.len() / 4)
+        };
+
+        let frag_shader_words: &[u32] = unsafe {
+            std::slice::from_raw_parts(frag_shader_code.as_ptr() as *const u32, frag_shader_code.len() / 4)
+        };
+        
+        
+        let vert_shader_module = {
+            let create_info = vk::ShaderModuleCreateInfo::default()
+            .code(&vert_shader_words);
+            unsafe {device.create_shader_module(&create_info, None)}
+        };
+        
+        let frag_shader_module = {
+            let create_info = vk::ShaderModuleCreateInfo::default()
+            .code(&frag_shader_words);    
+            unsafe {device.create_shader_module(&create_info, None)}
+        };
+
+        
+    }
+}
 
 pub struct AppBase {
     pub entry: Entry,
