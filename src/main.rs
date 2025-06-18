@@ -270,7 +270,8 @@ struct AppearanceBase {
 } //vulkan pipeline resources
 
 impl AppearanceBase {
-    pub fn new(device: &Device, render_pass: vk::RenderPass, extent: vk::Extent2D) -> VkResult<Self> {
+    pub fn new(self: Self, device: &Device, render_pass: vk::RenderPass, extent: vk::Extent2D) -> VkResult<Self> {
+
         let vert_shader_code = include_bytes!("../shader/triangle.vert.spv").to_vec();
         let frag_shader_code = include_bytes!("../shader/triangle.frag.spv").to_vec();
 
@@ -299,7 +300,7 @@ impl AppearanceBase {
             unsafe {device.create_shader_module(&create_info, None)}
         };
 
-        
+        Ok(self)
     }
 }
 
@@ -450,6 +451,10 @@ fn main() {
     };
 
     let device_name = unsafe { std::ffi::CStr::from_ptr(device_properties.device_name.as_ptr()) };
+
+    // not the same
+    // let device_name = unsafe { &std::ffi::CStr::from_ptr(device_properties.device_name[0] as *const i8) };
+
     println!("Device name 1: {:?} ", device_name);
 
     let frames_base = FramesBase::new(
